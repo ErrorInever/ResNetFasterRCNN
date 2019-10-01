@@ -1,5 +1,5 @@
-import model.cfg as cfg
 import torchvision
+from model.cfg import cfg
 from torchvision.models.detection import FasterRCNN
 from torchvision.models.detection.rpn import AnchorGenerator
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
@@ -20,11 +20,10 @@ def resnet(n_classes, backbone_n='resnet50', pretrained_backbone=True):
 
     backbone = torchvision.models.detection.backbone_utils.resnet_fpn_backbone(backbone_n,
                                                                                pretrained=pretrained_backbone)
-
     # set out channels for FasterRCNN
     backbone.out_channels = 256
     # define custom anchors for RPN
-    anchor_generator = AnchorGenerator(sizes=cfg.ANCHOR_SCALES, aspect_ratios=cfg.ANCHOR_RATIOS)
+    anchor_generator = AnchorGenerator(sizes=cfg.ANCHOR.SCALES, aspect_ratios=cfg.ANCHOR.RATIOS)
     roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0],
                                                     output_size=7,
                                                     sampling_ratio=2)
