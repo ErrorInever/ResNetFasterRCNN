@@ -84,7 +84,7 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
     def _create_train_df(self):
         """
         create a Dataframe for train data where:
-        bbox_x1, bbox_y1, bbox_x2, bbox_y2 - coords of bounding box e.g. x_min, y_min, x_max, y_max
+        bbox_x1, bbox_y1, bbox_x2, bbox_y2 - coords of bounding box e.g. x_min, x_max, y_min, y_max
         class - name of class
         fname - path to image
         label - correct class value
@@ -92,7 +92,7 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
         """
         # create dataframe
         frame = [[i.flat[0] for i in line] for line in self.cars_train_annos['annotations'][0]]
-        df_train = pd.DataFrame(frame, columns=['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2', 'class', 'fname'])
+        df_train = pd.DataFrame(frame, columns=['bbox_x1', 'bbox_x2', 'bbox_y1', 'bbox_y2', 'class', 'fname'])
         df_train['class'] = df_train['class'] - 1
         df_train['fname'] = [os.path.join(os.path.join(
             self.dir_name, 'cars_train/cars_train'), f) for f in df_train['fname']]
@@ -111,6 +111,10 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
         :return: list of class names
         """
         return list(self.le.classes_)
+
+    def __get_validation_set(self):
+        # TODO torch.utils.data.random_split(dataset, lengths)
+        pass
 
 
 class StanfordTestDataSet(StanfordCarsDataSet):
@@ -139,7 +143,7 @@ class StanfordTestDataSet(StanfordCarsDataSet):
         :return: DataFrame
         """
         frame = [[i.flat[0] for i in line] for line in self.cars_test_annos['annotations'][0]]
-        df_test = pd.DataFrame(frame, columns=['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2', 'fname'])
+        df_test = pd.DataFrame(frame, columns=['bbox_x1', 'bbox_x2', 'bbox_y1', 'bbox_y2', 'fname'])
         df_test['fname'] = [os.path.join(
             os.path.join(self.dir_name, 'cars_test/cars_test'), f) for f in df_test['fname']]
         return df_test
