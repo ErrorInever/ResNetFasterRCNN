@@ -40,14 +40,15 @@ from PIL import Image
 class StanfordCarsDataSet(Dataset):
     """base class"""
 
-    def __init__(self, dir_name, data_frame, transforms=None):
+    def __init__(self, dir_name, data_frame, transforms):
         self.dir_name = dir_name
         # annotations
-        self.cars_meta = loadmat(os.path.join(os.path.join(dir_name, 'car_devkit/devkit'),
+        self.devkit_dir = 'car_devkit/devkit'
+        self.cars_meta = loadmat(os.path.join(os.path.join(dir_name, self.devkit_dir),
                                               'cars_meta.mat'))
-        self.cars_train_annos = loadmat(os.path.join(os.path.join(dir_name, 'cars_train/cars_train'),
+        self.cars_train_annos = loadmat(os.path.join(os.path.join(dir_name, self.devkit_dir),
                                                      'cars_train_annos.mat'))
-        self.cars_test_annos = loadmat(os.path.join(os.path.join(dir_name, 'cars_test/cars_test'),
+        self.cars_test_annos = loadmat(os.path.join(os.path.join(dir_name, self.devkit_dir),
                                                     'cars_test_annos.mat'))
         self.transforms = transforms
         self.data_frame = data_frame
@@ -58,17 +59,18 @@ class StanfordCarsDataSet(Dataset):
 
 class StanfordTrainDataSet(StanfordCarsDataSet):
     """ train dataset"""
-    def __init__(self, dir_name, data_frame, transforms):
+    def __init__(self, dir_name, data_frame, transforms=None):
         super().__init__(dir_name, data_frame, transforms)
         self.le = LabelEncoder()
         self.data_frame = self._create_train_df()
+        self.labels = self._get_labels()
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.dir_name, self.data_frame.iloc[idx, 5])
+        img_name = self.data_frame.iloc[idx, 5]
         img = Image.open(img_name).convert('RGB')
-        label = self.data_frame.iloc[idx, 6]
+        label = self.data_frame.iloc[idx, 4]
         bbox = list(self.data_frame.iloc[idx, :4])
-        bbox = torch.from_numpy(np.array(bbox, dtype=np.uint8))
+        bbox = torch.from_numpy(np.array(bbox, dtype=np.int32))
         if self.transforms:
             img = self.transforms(img)
         return img, label, bbox
@@ -85,9 +87,10 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
         """
         create a Dataframe for train data where:
         bbox_x1, bbox_y1, bbox_x2, bbox_y2 - coords of bounding box e.g. x_min, x_max, y_min, y_max
-        class - name of class
+        class - id of the class the image belongs to
         fname - path to image
-        label - correct class value
+
+        label - name of class
         :return: DataFrame
         """
         # create dataframe
@@ -119,16 +122,15 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
 
 class StanfordTestDataSet(StanfordCarsDataSet):
     """ test dataset"""
-    def __init__(self, dir_name, data_frame, transforms):
+    def __init__(self, dir_name, data_frame, transforms=None):
         super().__init__(dir_name, data_frame, transforms)
         self.data_frame = self._create_test_df()
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.dir_name, self.data_frame.iloc[idx, -1])
+        img_name = self.data_frame.iloc[idx, -1]
         img = Image.open(img_name).convert('RGB')
-
         bbox = list(self.data_frame.iloc[idx, :4])
-        bbox = torch.from_numpy(np.array(bbox, dtype=np.uint8))
+        bbox = torch.from_numpy(np.array(bbox, dtype=np.int32))
 
         if self.transforms:
             img = self.transforms(img)
