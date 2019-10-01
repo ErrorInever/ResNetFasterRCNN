@@ -40,7 +40,7 @@ from PIL import Image
 class StanfordCarsDataSet(Dataset):
     """base class"""
 
-    def __init__(self, dir_name, data_frame, transforms):
+    def __init__(self, dir_name, transforms):
         self.dir_name = dir_name
         # annotations
         self.devkit_dir = 'car_devkit/devkit'
@@ -51,19 +51,16 @@ class StanfordCarsDataSet(Dataset):
         self.cars_test_annos = loadmat(os.path.join(os.path.join(dir_name, self.devkit_dir),
                                                     'cars_test_annos.mat'))
         self.transforms = transforms
-        self.data_frame = data_frame
-
-    def __len__(self):
-        return len(self.data_frame)
 
 
 class StanfordTrainDataSet(StanfordCarsDataSet):
     """ train dataset"""
-    def __init__(self, dir_name, data_frame, transforms=None):
-        super().__init__(dir_name, data_frame, transforms)
+    def __init__(self, dir_name, transforms=None):
+        super().__init__(dir_name, transforms)
         self.le = LabelEncoder()
         self.data_frame = self._create_train_df()
         self.labels = self._get_labels()
+        self.transforms = transforms
 
     def __getitem__(self, idx):
         img_name = self.data_frame.iloc[idx, 5]
@@ -71,9 +68,14 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
         label = self.data_frame.iloc[idx, 4]
         bbox = list(self.data_frame.iloc[idx, :4])
         bbox = torch.from_numpy(np.array(bbox, dtype=np.int32))
-        if self.transforms:
+
+        if self.transforms is not None:
             img = self.transforms(img)
+
         return img, label, bbox
+
+    def __len__(self):
+        return len(self.data_frame)
 
     def _get_labels(self):
         """
@@ -122,9 +124,10 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
 
 class StanfordTestDataSet(StanfordCarsDataSet):
     """ test dataset"""
-    def __init__(self, dir_name, data_frame, transforms=None):
-        super().__init__(dir_name, data_frame, transforms)
+    def __init__(self, dir_name, transforms=None):
+        super().__init__(dir_name, transforms)
         self.data_frame = self._create_test_df()
+        self.transforms = transforms
 
     def __getitem__(self, idx):
         img_name = self.data_frame.iloc[idx, -1]
@@ -132,10 +135,13 @@ class StanfordTestDataSet(StanfordCarsDataSet):
         bbox = list(self.data_frame.iloc[idx, :4])
         bbox = torch.from_numpy(np.array(bbox, dtype=np.int32))
 
-        if self.transforms:
+        if self.transforms is not None:
             img = self.transforms(img)
 
         return img, bbox
+
+    def __len__(self):
+        return len(self.data_frame)
 
     def _create_test_df(self):
         """
