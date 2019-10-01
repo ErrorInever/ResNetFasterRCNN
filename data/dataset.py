@@ -69,7 +69,7 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
         bbox = list(self.data_frame.iloc[idx, :4])
         bbox = torch.from_numpy(np.array(bbox, dtype=np.int32))
 
-        if self.transforms is not None:
+        if self.transforms:
             img = self.transforms(img)
 
         return img, label, bbox
@@ -135,7 +135,7 @@ class StanfordTestDataSet(StanfordCarsDataSet):
         bbox = list(self.data_frame.iloc[idx, :4])
         bbox = torch.from_numpy(np.array(bbox, dtype=np.int32))
 
-        if self.transforms is not None:
+        if self.transforms:
             img = self.transforms(img)
 
         return img, bbox

@@ -5,6 +5,9 @@ __C = edict()
 # Consumers can get config by:
 cfg = __C
 
+# seed
+__C.RANDOM_SEED = 42
+
 # RPN
 __C.ANCHOR = edict()
 __C.ANCHOR.SCALES = [8, 16, 32]
