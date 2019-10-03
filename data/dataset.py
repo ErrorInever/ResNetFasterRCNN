@@ -31,6 +31,8 @@ import os
 import pandas as pd
 import numpy as np
 import torch
+import imgaug as ia
+import imgaug.augmenters as iaa
 from scipy.io import loadmat
 from torch.utils.data.dataset import Dataset
 from sklearn.preprocessing import LabelEncoder
@@ -67,10 +69,26 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
         img = Image.open(img_name).convert('RGB')
         label = self.data_frame.iloc[idx, 4]
         bbox = list(self.data_frame.iloc[idx, :4])
-        bbox = torch.from_numpy(np.array(bbox, dtype=np.int32))
 
         if self.transforms:
-            img = self.transforms(img)
+            # convert image to numpy array
+            img_dim = np.array(img)
+            # set bounding boxes
+            bboxes = ia.BoundingBoxesOnImage([ia.BoundingBox(x1=bbox[0], y1=bbox[1], x2=bbox[2], y2=bbox[3])],
+                                             shape=img_dim)
+            # define transforms sequential
+            seq = iaa.Sequential([
+                iaa.Resize(size=224)
+            ])
+            # apply transforms to image and bounding box
+            img_dim = seq.augment_image(img_dim)
+            bbox = seq.augment_bounding_boxes(bboxes)
+            # convert bounding box to numpy array
+            bbox = bbox.to_xyxy_array(dtype=np.float16)
+            # convert bounding box to tensor
+            bbox = torch.from_numpy(bbox)
+            # convert image to bounding box and normalize
+            img = self.transforms(img_dim)
 
         return img, label, bbox
 
@@ -88,7 +106,7 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
     def _create_train_df(self):
         """
         create a Dataframe for train data where:
-        bbox_x1, bbox_y1, bbox_x2, bbox_y2 - coords of bounding box e.g. x_min, x_max, y_min, y_max
+        bbox_x1, bbox_y1, bbox_x2, bbox_y2 - coords of bounding box e.g. x_min, y_min , x_max, y_max
         class - id of the class the image belongs to
         fname - path to image
 
@@ -133,10 +151,19 @@ class StanfordTestDataSet(StanfordCarsDataSet):
         img_name = self.data_frame.iloc[idx, -1]
         img = Image.open(img_name).convert('RGB')
         bbox = list(self.data_frame.iloc[idx, :4])
-        bbox = torch.from_numpy(np.array(bbox, dtype=np.int32))
 
         if self.transforms:
-            img = self.transforms(img)
+            img_dim = np.array(img)
+            bboxes = ia.BoundingBoxesOnImage([ia.BoundingBox(x1=bbox[0], y1=bbox[1], x2=bbox[2], y2=bbox[3])],
+                                             shape=img_dim)
+            seq = iaa.Sequential([
+                iaa.Resize(size=224)
+            ])
+            img_dim = seq.augment_image(img_dim)
+            bbox = seq.augment_bounding_boxes(bboxes)
+            bbox = bbox.to_xyxy_array(dtype=np.float16)
+            bbox = torch.from_numpy(bbox)
+            img = self.transforms(img_dim)
 
         return img, bbox
 
@@ -146,7 +173,7 @@ class StanfordTestDataSet(StanfordCarsDataSet):
     def _create_test_df(self):
         """
         create a DataFrame for test data where:
-        bbox_x1, bbox_y1, bbox_x2, bbox_y2 - coords of bounding box e.g. x_min, y_min, x_max, y_max
+        bbox_x1, bbox_y1, bbox_x2, bbox_y2 - coords of bounding box e.g. x_min, y_min , x_max, y_max
         fname - path to image
         :return: DataFrame
         """
