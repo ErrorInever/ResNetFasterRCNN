@@ -57,6 +57,7 @@ class StanfordCarsDataSet(Dataset):
 
 class StanfordTrainDataSet(StanfordCarsDataSet):
     """ train dataset"""
+
     def __init__(self, dir_name, transforms=None):
         super().__init__(dir_name, transforms)
         self.le = LabelEncoder()
@@ -67,7 +68,9 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
     def __getitem__(self, idx):
         img_name = self.data_frame.iloc[idx, 5]
         img = Image.open(img_name).convert('RGB')
-        label = self.data_frame.iloc[idx, 4]
+        label = torch.from_numpy(np.array(self.data_frame.iloc[idx, 4], dtype=np.int64))
+        # up dimension
+        label.unsqueeze(0)
         bbox = list(self.data_frame.iloc[idx, :4])
 
         if self.transforms:
@@ -90,7 +93,9 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
             # convert image to bounding box and normalize
             img = self.transforms(img_dim)
 
-        return img, label, bbox
+        targets = {'boxes': bbox, 'labels': label}
+
+        return img, targets
 
     def __len__(self):
         return len(self.data_frame)
@@ -142,6 +147,7 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
 
 class StanfordTestDataSet(StanfordCarsDataSet):
     """ test dataset"""
+
     def __init__(self, dir_name, transforms=None):
         super().__init__(dir_name, transforms)
         self.data_frame = self._create_test_df()

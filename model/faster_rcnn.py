@@ -8,6 +8,7 @@ names = ['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
 
 
 def resnet(n_classes, backbone_n='resnet50', pretrained_backbone=True):
+    # FIX doesn't work
     """
     Faster-RCNN with
     :param n_classes: number of classes of Fast-RCNN-Predictor
@@ -35,13 +36,14 @@ def resnet(n_classes, backbone_n='resnet50', pretrained_backbone=True):
     return model
 
 
-def pretrained_resnet_50(n_classes=91):
+def resnet_50(num_classes=196, pretrained=True, pretrained_backbone=True):
     """
     :param n_classes: number of classes of Fast-RCNN-Predictor
     :return: returns the Faster-RCNN-Resnet-50 pre-trained on COCO train2017
     """
-    return torchvision.models.detection.fasterrcnn_resnet50_fpn(num_classes=n_classes,
-                                                                pretrained=True,
+    return torchvision.models.detection.fasterrcnn_resnet50_fpn(num_classes=num_classes,
+                                                                pretrained=pretrained,
+                                                                pretrained_backbone=pretrained_backbone,
                                                                 progress=True)
 
 

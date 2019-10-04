@@ -7,6 +7,7 @@ from model.cfg import cfg
 from torchvision import transforms
 from data.dataset import StanfordTrainDataSet, StanfordTestDataSet
 from torch.utils.data import DataLoader
+from model import faster_rcnn
 
 
 def set_seed(val):
@@ -24,29 +25,27 @@ if __name__ == '__main__':
     # set device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if device.type is not 'cuda':
-        print("WARNING: cuda is not available")
+        print("WARNING: cuda is not available, using cpu")
 
     # define transforms for images
-    train_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(cfg.TRANSFORM.MEAN, cfg.TRANSFORM.STD)
-    ])
-    val_test_transforms = transforms.Compose([
-        transforms.Resize((224, 224)),
+    transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(cfg.TRANSFORM.MEAN, cfg.TRANSFORM.STD)
     ])
 
     # prepare datasets
-    train_dataset = StanfordTrainDataSet(dir_name, transforms=train_transform)
-    test_dataset = StanfordTestDataSet(dir_name, transforms=val_test_transforms)
+    train_dataset = StanfordTrainDataSet(dir_name, transforms=transform)
+    test_dataset = StanfordTestDataSet(dir_name, transforms=transform)
 
     # create dataloaders
-    train_dataloader = DataLoader(train_dataset, batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True, num_workers=5)
-    test_dataloader = DataLoader(test_dataset, batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True, num_workers=5)
+    train_dataloader = DataLoader(train_dataset, batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True, num_workers=4)
+    test_dataloader = DataLoader(test_dataset, batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True, num_workers=4)
     print("info: \ntrain data [batches:{}, files:{}]\n"
           "test data [batches:{}, files:{}]\n".format(len(train_dataloader), len(train_dataset),
                                                       len(test_dataloader), len(test_dataset)))
+
+    # define model
+    model = faster_rcnn.resnet_50(num_classes=196)
+
+
 
