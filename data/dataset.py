@@ -68,16 +68,20 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
     def __getitem__(self, idx):
         img_name = self.data_frame.iloc[idx, 5]
         img = Image.open(img_name).convert('RGB')
-        label = torch.from_numpy(np.array(self.data_frame.iloc[idx, 4], dtype=np.int64))
-        # up dimension
-        label.unsqueeze(0)
-        bbox = list(self.data_frame.iloc[idx, :4])
+        labels = torch.as_tensor(self.data_frame.iloc[idx, 4], dtype=torch.int64)
+        labels = labels.unsqueeze(0)
+        boxes_list = list(self.data_frame.iloc[idx, :4])
+        boxes = torch.as_tensor(boxes_list, dtype=torch.float32)
 
-        if self.transforms:
-            # convert image to numpy array
+        target = {}
+        target['boxes'] = boxes
+        target['labels'] = labels
+
+        if self.transforms is not None:
             img_dim = np.array(img)
             # set bounding boxes
-            bboxes = ia.BoundingBoxesOnImage([ia.BoundingBox(x1=bbox[0], y1=bbox[1], x2=bbox[2], y2=bbox[3])],
+            boxes = ia.BoundingBoxesOnImage([ia.BoundingBox(x1=boxes_list[0], y1=boxes_list[1],
+                                                            x2=boxes_list[2], y2=boxes_list[3])],
                                              shape=img_dim)
             # define transforms sequential
             seq = iaa.Sequential([
@@ -85,17 +89,17 @@ class StanfordTrainDataSet(StanfordCarsDataSet):
             ])
             # apply transforms to image and bounding box
             img_dim = seq.augment_image(img_dim)
-            bbox = seq.augment_bounding_boxes(bboxes)
+            boxes = seq.augment_bounding_boxes(boxes)
             # convert bounding box to numpy array
-            bbox = bbox.to_xyxy_array(dtype=np.float16)
+            boxes = boxes.to_xyxy_array(dtype=np.float16)
             # convert bounding box to tensor
-            bbox = torch.from_numpy(bbox)
-            # convert image to bounding box and normalize
+            boxes = torch.from_numpy(boxes)
+
+            target['boxes'] = boxes
+            # convert image to tensor and normalize
             img = self.transforms(img_dim)
 
-        targets = {'boxes': bbox, 'labels': label}
-
-        return img, targets
+        return img, target
 
     def __len__(self):
         return len(self.data_frame)
@@ -156,22 +160,26 @@ class StanfordTestDataSet(StanfordCarsDataSet):
     def __getitem__(self, idx):
         img_name = self.data_frame.iloc[idx, -1]
         img = Image.open(img_name).convert('RGB')
-        bbox = list(self.data_frame.iloc[idx, :4])
-
-        if self.transforms:
+        boxes_list = list(self.data_frame.iloc[idx, :4])
+        boxes = torch.as_tensor(boxes_list, dtype=torch.float32)
+        target = {}
+        target['boxes'] = boxes
+        if self.transforms is not None:
             img_dim = np.array(img)
-            bboxes = ia.BoundingBoxesOnImage([ia.BoundingBox(x1=bbox[0], y1=bbox[1], x2=bbox[2], y2=bbox[3])],
+            boxes = ia.BoundingBoxesOnImage([ia.BoundingBox(x1=boxes_list[0], y1=boxes_list[1],
+                                                            x2=boxes_list[2], y2=boxes_list[3])],
                                              shape=img_dim)
             seq = iaa.Sequential([
                 iaa.Resize(size=224)
             ])
             img_dim = seq.augment_image(img_dim)
-            bbox = seq.augment_bounding_boxes(bboxes)
-            bbox = bbox.to_xyxy_array(dtype=np.float16)
-            bbox = torch.from_numpy(bbox)
+            boxes = seq.augment_bounding_boxes(boxes)
+            boxes = boxes.to_xyxy_array(dtype=np.float16)
+            boxes = torch.from_numpy(boxes)
+            target['boxes'] = boxes
             img = self.transforms(img_dim)
 
-        return img, bbox
+        return img, target
 
     def __len__(self):
         return len(self.data_frame)
