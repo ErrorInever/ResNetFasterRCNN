@@ -36,7 +36,7 @@ def resnet(n_classes, backbone_n='resnet50', pretrained_backbone=True):
     return model
 
 
-def resnet_50(num_classes=196, pretrained=True, pretrained_backbone=True):
+def resnet_50(num_classes=196, pretrained=False, pretrained_backbone=True):
     """
     :param n_classes: number of classes of Fast-RCNN-Predictor
     :return: returns the Faster-RCNN-Resnet-50 pre-trained on COCO train2017
