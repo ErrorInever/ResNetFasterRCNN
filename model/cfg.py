@@ -20,13 +20,13 @@ __C.TRANSFORM.STD = [0.229, 0.224, 0.225]
 
 # Train
 __C.TRAIN = edict()
-__C.TRAIN.EPOCHS = 100
+__C.TRAIN.EPOCHS = 10
 __C.TRAIN.LEARNING_RATE = 1.0e-3
 __C.TRAIN.BATCH_SIZE = 128
 
 # scheduler
 __C.TRAIN.SCHEDULER = edict()
-__C.TRAIN.SCHEDULER.STEP_SIZE = 5
+__C.TRAIN.SCHEDULER.STEP_SIZE = 3
 __C.TRAIN.SCHEDULER.GAMMA = 0.1
 
 # Stochastic gradient descent with momentum
